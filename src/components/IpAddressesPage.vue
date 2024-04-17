@@ -2,9 +2,7 @@
   <v-main class="bg-grey-lighten-2">
     <v-container>
       <!-- Título "IP Addresses" -->
-
-      <h1 class="page-title">IP Addresses teste pedro</h1>
-
+      <h1 class="page-title">IP Addresses</h1>
 
       <!-- Conteúdo da página dos IP Addresses -->
       <v-row>
