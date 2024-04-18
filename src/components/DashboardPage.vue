@@ -13,23 +13,20 @@
   </v-main>
 </template>
 
-<script>
-export default {
-  data() {
-    return {
-      pages: [
-        { name: 'Interfaces', path: '/interfaces', icon: 'mdi-ethernet-cable' },
-        { name: 'Security Profiles', path: '/security-profiles', icon: 'mdi-lock' },
-        { name: 'Wireless Networks', path: '/wireless-networks', icon: 'mdi-wifi' },
-        { name: 'Static Routes', path: '/static-routes', icon: 'mdi-road' },
-        { name: 'IP Addresses', path: '/ip-addresses', icon: 'mdi-numeric' },
-        { name: 'DHCP Servers', path: '/dhcp-servers', icon: 'mdi-server' },
-        { name: 'DNS Server', path: '/dns-server', icon: 'mdi-dns' }
-      ]
-    };
-  }
-};
+<script setup>
+import { ref } from 'vue';
+
+const pages = ref([
+  { name: 'Interfaces', path: '/interfaces', icon: 'mdi-ethernet-cable' },
+  { name: 'Security Profiles', path: '/security-profiles', icon: 'mdi-lock' },
+  { name: 'Wireless Networks', path: '/wireless-networks', icon: 'mdi-wifi' },
+  { name: 'Static Routes', path: '/static-routes', icon: 'mdi-road' },
+  { name: 'IP Addresses', path: '/ip-addresses', icon: 'mdi-numeric' },
+  { name: 'DHCP Servers', path: '/dhcp-servers', icon: 'mdi-server' },
+  { name: 'DNS Server', path: '/dns-server', icon: 'mdi-dns' }
+]);
 </script>
+
 
 <style>
 .page-link {
