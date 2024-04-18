@@ -1,37 +1,201 @@
 <template>
-  <v-main class="bg-grey-lighten-2">
-    <v-container>
-      <!-- Título "Security Profiles" -->
-      <h1 class="page-title">Security Profiles</h1>
-
-      <!-- Conteúdo da página dos Security Profiles -->
-      <v-row>
-        <!-- Conteúdo dos Security Profiles -->
-      </v-row>
-
-      <!-- Botão para voltar ao Dashboard -->
-      <div class="footer">
-        <v-btn @click="goToDashboard">Back to Dashboard</v-btn>
+  <div class="container">
+    <h1>Security Profiles</h1>
+    <div v-if="loading" class="loading">Loading...</div>
+    <div v-else>
+      <table class="security-profile-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Authentication Types</th>
+            <th>Group Ciphers</th>
+            <th>Management Protection</th>
+            <th>EAP Methods</th>
+            <th>Mode</th>
+            <th>Supplicant Identity</th>
+            <th>WPA Pre-shared Key</th>
+            <th>WPA2 Pre-shared Key</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="(profile, index) in securityProfiles" :key="index">
+            <td>{{ profile.name || '-' }}</td>
+            <td>{{ profile['authentication-types'] || '-' }}</td>
+            <td>{{ profile['group-ciphers'] || '-' }}</td>
+            <td>{{ profile['management-protection'] || '-' }}</td>
+            <td>{{ profile['eap-methods'] || '-' }}</td>
+            <td>{{ profile.mode || '-' }}</td>
+            <td>{{ profile['supplicant-identity'] || '-' }}</td>
+            <td>{{ profile['wpa-pre-shared-key'] || '-' }}</td>
+            <td>{{ profile['wpa2-pre-shared-key'] || '-' }}</td>
+          </tr>
+        </tbody>
+      </table>
+      <!-- Button to open the add profile modal -->
+      <div class="add-button">
+        <v-btn @click="showAddProfileModal">Add Security Profile</v-btn>
       </div>
-    </v-container>
-  </v-main>
+    </div>
+
+    <!-- Add profile modal -->
+    <v-dialog v-model="addProfileModal" max-width="800px">
+      <template v-slot:activator="{ on }"></template>
+      <v-card>
+        <v-card-title>Add Security Profile</v-card-title>
+        <v-card-text>
+          <!-- Form for adding a new security profile -->
+          <v-text-field v-model="newProfile.name" label="Name"></v-text-field>
+          <v-text-field v-model="newProfile['authentication-types']" label="Authentication Types"></v-text-field>
+          <v-text-field v-model="newProfile['group-ciphers']" label="Group Ciphers"></v-text-field>
+          <v-text-field v-model="newProfile['management-protection']" label="Management Protection"></v-text-field>
+          <v-text-field v-model="newProfile['eap-methods']" label="EAP Methods"></v-text-field>
+          <v-text-field v-model="newProfile.mode" label="Mode"></v-text-field>
+          <v-text-field v-model="newProfile['supplicant-identity']" label="Supplicant Identity"></v-text-field>
+          <v-text-field v-model="newProfile['wpa-pre-shared-key']" label="WPA Pre-shared Key"></v-text-field>
+          <v-text-field v-model="newProfile['wpa2-pre-shared-key']" label="WPA2 Pre-shared Key"></v-text-field>
+        </v-card-text>
+        <v-card-actions>
+          <!-- Button to cancel adding profile -->
+          <v-btn @click="cancelAddProfile">Cancel</v-btn>
+          <!-- Button to save the new profile -->
+          <v-btn color="primary" @click="saveNewProfile">Save</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Button to go back to Dashboard -->
+    <div class="footer">
+      <v-btn @click="goToDashboard">Back to Dashboard</v-btn>
+    </div>
+  </div>
 </template>
 
 <script>
+import { ref, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
+
+const username = 'admin';
+const password = '12345';
+const basicAuth = btoa(`${username}:${password}`);
+
+const getSecurityProfiles = async () => {
+  try {
+    const response = await fetch('/rest/interface/wireless/security-profiles', {
+      method: "GET",
+      headers: {
+        'Content-type': 'application/json',
+        'Authorization': `Basic ${basicAuth}`
+      }
+    });
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching security profiles:', error);
+    return [];
+  }
+};
+
 export default {
-  methods: {
-    goToDashboard() {
-      // Redirecionar para a rota do Dashboard
-      this.$router.push('/dashboard');
-    }
+  setup() {
+    const router = useRouter();
+    const securityProfiles = ref([]);
+    const loading = ref(true);
+    const addProfileModal = ref(false); // Control variable for showing/hiding add profile modal
+    const newProfile = ref({}); // New profile object
+
+    onMounted(async () => {
+      try {
+        securityProfiles.value = await getSecurityProfiles();
+      } catch (error) {
+        console.error('Error:', error);
+      } finally {
+        loading.value = false;
+      }
+    });
+
+    const goToDashboard = () => {
+      router.push('/dashboard');
+    };
+
+    // Method to show the add profile modal
+    const showAddProfileModal = () => {
+      addProfileModal.value = true;
+    };
+
+    // Method to cancel adding profile
+    const cancelAddProfile = () => {
+      addProfileModal.value = false;
+      newProfile.value = {}; // Reset new profile object
+    };
+
+    // Method to save the new profile
+    const saveNewProfile = async () => {
+      try {
+        // Send a PUT request to create the new profile
+        const response = await fetch('/rest/interface/wireless/security-profiles', {
+          method: "PUT",
+          headers: {
+            'Content-type': 'application/json',
+            'Authorization': `Basic ${basicAuth}`
+          },
+          body: JSON.stringify(newProfile.value)
+        });
+
+        // Check if the request was successful (status code 200)
+        if (response.ok) {
+          console.log('New Profile created successfully!');
+          // Reset new profile object
+          newProfile.value = {};
+          // Refresh the security profiles list
+          securityProfiles.value = await getSecurityProfiles();
+          // Close the modal
+          addProfileModal.value = false;
+        } else {
+          // If the request failed, log the error
+          console.error('Failed to create new profile:', response.statusText);
+        }
+      } catch (error) {
+        console.error('Error saving profile:', error);
+      }
+    };
+
+    return { securityProfiles, loading, goToDashboard, addProfileModal, showAddProfileModal, cancelAddProfile, saveNewProfile, newProfile };
   }
 };
 </script>
 
 <style scoped>
-.page-title {
-  text-align: center;
-  margin-bottom: 20px; /* Espaçamento abaixo do título */
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 20px;
+}
+
+h1 {
+  margin-left: 20px;
+}
+
+.security-profile-table {
+  width: 90%;
+  border-collapse: collapse;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.security-profile-table th,
+.security-profile-table td {
+  padding: 12px;
+  border-bottom: 1px solid #dddddd;
+  text-align: left;
+}
+
+.security-profile-table th {
+  background-color: #f2f2f2;
+}
+
+.loading {
+  margin-top: 20px;
 }
 
 .footer {
@@ -40,5 +204,9 @@ export default {
   left: 0;
   width: 100%;
   padding: 20px;
+}
+
+.add-button {
+  margin-bottom: 20px;
 }
 </style>

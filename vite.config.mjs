@@ -49,12 +49,11 @@ export default defineConfig({
     ],
   },
   server: {
-    port: 3000,
     proxy: {
       '/rest': {
-        target: 'http://192.168.79.1', // Target server URL
-        changeOrigin: true, // Change the origin to match the target server
-        rewrite: (path) => path.replace(/^\/rest\//, '/rest'), // Rewrite the request path
+        target: 'http://192.168.79.1',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/rest\//, '/rest'),
       },
     },
   },
