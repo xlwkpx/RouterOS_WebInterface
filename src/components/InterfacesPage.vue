@@ -5,8 +5,8 @@
       <label for="interface-filter">Filter by type:</label>
       <select id="interface-filter" v-model="selectedFilter" class="custom-dropdown">
         <option value="all">All Interfaces</option>
-        <option value="wireless">Wireless</option>
-        <option value="bridged">Bridged</option>
+        <option value="wlan">Wireless</option>
+        <option value="bridge">Bridge</option>
       </select>
     </div>
     <div v-if="loading" class="loading">Loading...</div>
@@ -19,6 +19,7 @@
             <th>MTU</th>
             <th>Running</th>
             <th>Mac Address</th>
+            <th></th>
           </tr>
         </thead>
         <tbody>
@@ -28,10 +29,51 @@
             <td>{{ networkInterface.mtu }}</td>
             <td>{{ networkInterface.running }}</td>
             <td>{{ networkInterface['mac-address'] }}</td>
+            <div v-if="selectedFilter === 'bridge'">
+              <td>
+                <button @click="editBridgeInterface(networkInterface)">Edit</button>
+              </td>
+              <td>
+                <button @click="deleteBridgeInterface(networkInterface)">Delete</button>
+              </td>
+            </div>
           </tr>
         </tbody>
       </table>
+      <div v-if="selectedFilter === 'bridge'"style="display: flex; margin-top: 7px;">
+      <v-btn @click="createBridgeInterface">Create Bridge Interface</v-btn>
     </div>
+    </div>
+
+
+    <v-dialog v-model="showDialogBridge" max-width="800px">
+      <template v-slot:activator="{ on }"></template>
+      <v-card>
+        <v-card-title v-if="!editModal">Add Address</v-card-title>
+        <v-card-title v-else>Edit Address</v-card-title>
+          <v-card-text>
+            <!-- Form for adding a new security profile -->
+            <v-text-field v-model="newBridgeInterface.name" label="Name"></v-text-field>
+            <v-select
+              v-model="newBridgeInterface.arp"
+              :items="bridgeArpOptions"
+              label="ARP"
+              outlined
+              dense
+            ></v-select>
+
+          </v-card-text>
+        <v-card-actions>
+          <!-- Button to cancel adding profile -->
+          <v-btn @click="cancel">Cancel</v-btn>
+          <!-- Button to save the new profile -->
+          <v-btn v-if="!editModal" color="primary" @click="saveNewBridge">Save</v-btn>
+          <v-btn v-else color="primary" @click="saveEditBridge">Edit</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+
     <!-- Button to go back to Dashboard -->
     <div class="footer">
         <v-btn @click="goToDashboard">Back to Dashboard</v-btn>
@@ -77,6 +119,10 @@ export default {
     const networkInterfaces = ref([]);
     const loading = ref(true);
     const selectedFilter = ref("all");
+    const showDialogBridge = ref(false);
+    const editModal = ref(false);
+    const bridgeArpOptions = ref(["enabled", "disabled", "local-proxy-arp", "reply-only","proxy-arp"]);
+    const selectedBridgeInterface = ref(null);
 
     const filteredInterfaces = computed(() => {
       if (selectedFilter.value === "all") {
@@ -85,6 +131,127 @@ export default {
         return networkInterfaces.value.filter(iface => iface.type === selectedFilter.value);
       }
     });
+
+    const newBridgeInterface = ref({
+        "name": "",
+        "ageing-time": "5m",
+        "arp": "",
+        "arp-timeout": "auto",
+        "auto-mac": "true",
+        "dhcp-snooping": "false",
+        "disabled": "false",
+        "fast-forward": "true",
+        "forward-delay": "15s",
+        "igmp-snooping": "false",
+        "max-message-age": "20s",
+        "mtu": "auto",
+        "priority": "0x8000",
+        "protocol-mode": "rstp",
+        "transmit-hold-count": "6",
+        "vlan-filtering": "false"
+
+    });
+
+    const cancel = () => {
+      showDialogBridge.value = false;
+      editModal.value = false;
+      newBridgeInterface.name = '';
+      newBridgeInterface.arp = '';
+    };
+
+    const createBridgeInterface = () => {
+      editModal.value = false;
+      showDialogBridge.value = true;
+    };
+
+    const editBridgeInterface = async (bridgeInterface) => {
+      selectedBridgeInterface.value = bridgeInterface['id'];
+
+      const response = await fetch(`/rest/interface/bridge/`+selectedBridgeInterface.value, {
+          method: "GET",
+          headers: {
+            'Content-type': 'application/json',
+            'Authorization': `Basic ${basicAuth}`
+          }
+        })
+        .then(response => response.json());
+      editModal.value = true;
+      showDialogBridge.value = true;
+      newBridgeInterface.value.name = response.name;
+      newBridgeInterface.value.arp = response['arp'];
+    };
+
+    const deleteBridgeInterface = async (bridgeInterface) => {
+      try {
+        const response = await fetch(`/rest/interface/bridge/${bridgeInterface['name']}`, {
+          method: "DELETE",
+          headers: {
+            'Content-type': 'application/json',
+            'Authorization': `Basic ${basicAuth}`
+          }
+        });
+        if (response.ok) {
+          networkInterfaces.value = await getInterfaces();
+        } else {
+          console.error('Error deleting bridge interface:', response.statusText);
+        }
+      } catch (error) {
+        console.error('Error deleting bridge interface:', error);
+      }
+    };
+
+
+    const saveEditBridge = async () => {
+      try {
+        const response = await fetch(`/rest/interface/bridge/`+selectedBridgeInterface.value, {
+          method: "PATCH",
+          headers: {
+            'Content-type': 'application/json',
+            'Authorization': `Basic ${basicAuth}`
+          },
+          body: JSON.stringify({
+            "name": newBridgeInterface.value.name,
+            "arp": newBridgeInterface.value.arp
+
+          })
+        });
+        if (response.ok) {
+          showDialogBridge.value = false;
+          editModal.value = false;
+          networkInterfaces.value = await getInterfaces();
+          networkInterfaces.value.name = '';
+          networkInterfaces.value.arp = '';
+        } else {
+          console.error('Error editing bridge interface:', response.statusText);
+        }
+      } catch (error) {
+        console.error('Error editing bridge interface:', error);
+      }
+    };
+
+    const saveNewBridge = async () => {
+      try {
+        const response = await fetch('/rest/interface/bridge', {
+          method: "PUT",
+          headers: {
+            'Content-type': 'application/json',
+            'Authorization': `Basic ${basicAuth}`
+          },
+          body: JSON.stringify(newBridgeInterface.value)
+        });
+        if (response.ok) {
+          showDialogBridge.value = false;
+          editModal.value = false;
+          networkInterfaces.value = await getInterfaces();
+          networkInterfaces.value.name = '';
+          networkInterfaces.value.arp = '';
+        } else {
+          console.error('Error creating bridge interface:', response.statusText);
+        }
+      } catch (error) {
+        console.error('Error creating bridge interface:', error);
+      }
+    };
 
     onMounted(async () => {
       try {
@@ -102,7 +269,8 @@ export default {
       router.push('/dashboard');
     };
 
-    return { networkInterfaces, loading, selectedFilter, filteredInterfaces, goToDashboard };
+    return { networkInterfaces, loading, selectedFilter, filteredInterfaces, goToDashboard , createBridgeInterface, editBridgeInterface, deleteBridgeInterface, showDialogBridge, newBridgeInterface, saveNewBridge, editModal, bridgeArpOptions, cancel,
+    saveEditBridge, selectedBridgeInterface};
   }
 };
 </script>

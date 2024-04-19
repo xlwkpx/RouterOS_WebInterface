@@ -15,6 +15,7 @@
             <th>Supplicant Identity</th>
             <th>WPA Pre-shared Key</th>
             <th>WPA2 Pre-shared Key</th>
+            <th></th>
           </tr>
         </thead>
         <tbody>
@@ -28,6 +29,12 @@
             <td>{{ profile['supplicant-identity'] || '-' }}</td>
             <td>{{ profile['wpa-pre-shared-key'] || '-' }}</td>
             <td>{{ profile['wpa2-pre-shared-key'] || '-' }}</td>
+            <td>
+              <!-- Add buttons for editing/deleting profiles -->
+              <div style="display: flex; ">
+              <button @click="eliminarProfile(profile)"> Eliminar </button>
+            </div>
+            </td>
           </tr>
         </tbody>
       </table>
@@ -88,6 +95,7 @@ const getSecurityProfiles = async () => {
       }
     });
     return await response.json();
+
   } catch (error) {
     console.error('Error fetching security profiles:', error);
     return [];
@@ -102,9 +110,12 @@ export default {
     const addProfileModal = ref(false); // Control variable for showing/hiding add profile modal
     const newProfile = ref({}); // New profile object
 
+
     onMounted(async () => {
       try {
         securityProfiles.value = await getSecurityProfiles();
+
+
       } catch (error) {
         console.error('Error:', error);
       } finally {
@@ -127,6 +138,32 @@ export default {
       newProfile.value = {}; // Reset new profile object
     };
 
+    async function  eliminarProfile(profile){
+      try {
+        const response = await fetch('/rest/interface/wireless/security-profiles/'+profile[".id"], {
+          method: "DELETE",
+          headers: {
+            'Content-type': 'application/json',
+            'Authorization': `Basic ${basicAuth}`
+          },
+          body: JSON.stringify(newProfile.value)
+        });
+
+        console.log(newProfile.value);
+
+        if (response.ok) {
+          console.log('Profile deleted successfully!');
+          newProfile.value = {};
+          securityProfiles.value = await getSecurityProfiles();
+          addProfileModal.value = false;
+        } else {
+          console.error('Failed to delete profile:', response.statusText);
+        }
+      } catch (error) {
+        console.error('Error deleting profile:', error);
+      }
+    };
+
     // Method to save the new profile
     const saveNewProfile = async () => {
       try {
@@ -137,8 +174,12 @@ export default {
             'Content-type': 'application/json',
             'Authorization': `Basic ${basicAuth}`
           },
+
+
           body: JSON.stringify(newProfile.value)
         });
+
+        console.log(newProfile.value);
 
         // Check if the request was successful (status code 200)
         if (response.ok) {
@@ -158,7 +199,7 @@ export default {
       }
     };
 
-    return { securityProfiles, loading, goToDashboard, addProfileModal, showAddProfileModal, cancelAddProfile, saveNewProfile, newProfile };
+    return { securityProfiles, loading, goToDashboard, addProfileModal, showAddProfileModal, cancelAddProfile, saveNewProfile, newProfile , eliminarProfile};
   }
 };
 </script>

@@ -7,25 +7,64 @@
         <thead>
           <tr>
             <th>Ip Address</th>
-            <th>Name</th>
-            <th>MAC Address</th>
-            <th>MTU</th>
-            <th>Running</th>
+            <th>Interface</th>
+            <th>Network</th>
+            <th></th>
+            <th></th>
             <!-- Add more columns as needed -->
           </tr>
         </thead>
         <tbody>
           <tr v-for="(address, index) in ipAddresses" :key="index">
-           <td>192.168.79.{{ address.id || '-' }}</td>
-            <td>{{ address.name || '-' }}</td>
-            <td>{{ address['mac-address'] || '-' }}</td>
-            <td>{{ address.mtu || '-' }}</td>
-            <td>{{ address.running || '-' }}</td>
+           <td>{{ address.address || '-' }}</td>
+            <td>{{ address["interface"] || '-' }}</td>
+            <td>{{ address['network'] || '-' }}</td>
             <!-- Add more columns as needed -->
+            <td>
+            <button @click="EditarIp(address)"> Editar</button>
+          </td>
+          <td>
+            <button @click="EliminarIp(address)"> Eliminar</button>
+          </td>
           </tr>
+
+
         </tbody>
       </table>
+      <div class="add-button">
+        <v-btn @click="showAddAddressModal = true">Add new IP Address</v-btn>
+      </div>
     </div>
+
+
+    <v-dialog v-model="showAddAddressModal" max-width="800px">
+      <template v-slot:activator="{ on }"></template>
+      <v-card>
+        <v-card-title v-if="!editModal">Add Address</v-card-title>
+        <v-card-title v-else>Edit Address</v-card-title>
+          <v-card-text>
+            <!-- Form for adding a new security profile -->
+            <v-select
+              v-model="newAddress.interface"
+              :items="networkInterfaces"
+              label="Interface"
+              outlined
+              dense
+            ></v-select>
+            <v-text-field v-model="newAddress['address']" label="Address"></v-text-field>
+            <v-text-field v-model="newAddress['network']" label="Network"></v-text-field>
+          </v-card-text>
+        <v-card-actions>
+          <!-- Button to cancel adding profile -->
+          <v-btn @click="cancelAddAddress">Cancel</v-btn>
+          <!-- Button to save the new profile -->
+          <v-btn v-if="!editModal" color="primary" @click="saveNewAddress">Save</v-btn>
+          <v-btn v-else color="primary" @click="saveEditAddress">Edit</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+
     <!-- Button to go back to Dashboard -->
     <div class="footer">
       <v-btn @click="goToDashboard">Back to Dashboard</v-btn>
@@ -41,9 +80,10 @@ const username = 'admin';
 const password = '12345';
 const basicAuth = btoa(`${username}:${password}`);
 
+
 const getIpAddresses = async () => {
   try {
-    const response = await fetch('/rest/interface', {
+    const response = await fetch('/rest/ip/address', {
       method: "GET",
       headers: {
         'Content-type': 'application/json',
@@ -54,28 +94,148 @@ const getIpAddresses = async () => {
       throw new Error('Failed to fetch IP addresses');
     }
     const responseData = await response.json();
-    return responseData.map(address => {
-      const newAddress = {};
-      for (const key in address) {
-        newAddress[key.replace(/^\./, '')] = address[key];
-      }
-      return newAddress;
-    });
+    return responseData;
   } catch (error) {
     console.error('Error fetching IP addresses:', error);
     return [];
   }
 };
+const getInterfaces = () => {
+      return fetch('/rest/interface', {
+        method: "GET",
+        headers: {
+          'Content-type': 'application/json',
+          'Authorization': `Basic ${basicAuth}`
+        }
+      })
+      .then(response => response.json())
+      .then(responseData => {
+        // Mapeie os dados para extrair apenas os nomes das interfaces de rede
+        const interfaceNames = responseData.map(data => data.name);
+        return interfaceNames;
+      })
+      .catch(error => {
+        console.error('Error fetching network interfaces:', error);
+        return [];
+      });
+    };
 
 export default {
   setup() {
     const router = useRouter();
     const ipAddresses = ref([]);
     const loading = ref(true);
+    const addProfileModal = ref(false);
+    const showAddAddressModal = ref(false);
+    const editModal = ref(false);
+    const networkInterfaces = ref([]);
+    const selectedIp = ref(null);
+
+
+    const newAddress = ref({
+        "address":"",
+        "comment":null,
+        "disabled":"false",
+        "interface":"",
+        "network":""
+
+    });
+
+    function EditarIp(address) {
+      selectedIp.value = address['.id'];
+
+      console.log(address);
+
+      newAddress.value.interface = address.interface;
+      newAddress.value.address = address.address;
+      newAddress.value.network = address.network;
+      editModal.value = true;
+      showAddAddressModal.value = true;
+
+    };
+
+
+    const cancelAddAddress = () => {
+      showAddAddressModal.value = false;
+      editModal.value = false;
+      newAddress.value.interface = '';
+      newAddress.value.address = '';
+      newAddress.value.network = '';
+    };
+
+    async function EliminarIp(address) {
+      const response = await fetch('/rest/ip/address/'+address['.id'], {
+        method: "DELETE",
+        headers: {
+          'Content-type': 'application/json',
+          'Authorization': `Basic ${basicAuth}`
+        }
+      })
+      if (!response.ok) {
+        throw new Error('Failed to delete IP address');
+      }
+      ipAddresses.value = await getIpAddresses();
+
+    };
+
+    const saveNewAddress = async () => {
+      try {
+        const response = await fetch('/rest/ip/address', {
+          method: "PUT",
+          headers: {
+            'Content-type': 'application/json',
+            'Authorization': `Basic ${basicAuth}`
+          },
+          body: JSON.stringify(newAddress.value)
+        });
+        if (!response.ok) {
+          throw new Error('Failed to save new IP address');
+        }
+        ipAddresses.value = await getIpAddresses();
+        showAddAddressModal.value = false;
+
+        newAddress.interface = '';
+        newAddress.address = '';
+        newAddress.network = '';
+      } catch (error) {
+        console.error('Error saving new IP address:', error);
+      }
+    };
+
+    const saveEditAddress = async () => {
+      try {
+        const response = await fetch(`/rest/ip/address/${selectedIp.value}`, {
+          method: "PATCH",
+          headers: {
+            'Content-type': 'application/json',
+            'Authorization': `Basic ${basicAuth}`
+          },
+          body: JSON.stringify({
+            "address": newAddress.value.address,
+            "interface": newAddress.value.interface,
+            "network": newAddress.value.network
+          })
+        });
+        if (!response.ok) {
+          throw new Error('Failed to save edited IP address');
+        }
+        ipAddresses.value = await getIpAddresses();
+        showAddAddressModal.value = false;
+        editModal.value = false;
+        newAddress.value.interface = '';
+        newAddress.value.address = '';
+        newAddress.value.network = '';
+      } catch (error) {
+        console.error('Error saving edited IP address:', error);
+      }
+    };
+
+
 
     onMounted(async () => {
       try {
         ipAddresses.value = await getIpAddresses();
+        networkInterfaces.value = await getInterfaces();
       } catch (error) {
         console.error('Error:', error);
       } finally {
@@ -87,7 +247,8 @@ export default {
       router.push('/dashboard');
     };
 
-    return { ipAddresses, loading, goToDashboard };
+    return { ipAddresses, loading, goToDashboard , newAddress, showAddAddressModal, saveNewAddress, networkInterfaces, EditarIp, EliminarIp , selectedIp, editModal, cancelAddAddress
+    , saveEditAddress};
   }
 };
 </script>
