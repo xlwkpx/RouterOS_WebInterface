@@ -8,11 +8,7 @@
           <tr>
             <th>Name</th>
             <th>Authentication Types</th>
-            <th>Group Ciphers</th>
-            <th>Management Protection</th>
-            <th>EAP Methods</th>
             <th>Mode</th>
-            <th>Supplicant Identity</th>
             <th>WPA Pre-shared Key</th>
             <th>WPA2 Pre-shared Key</th>
             <th></th>
@@ -22,18 +18,14 @@
           <tr v-for="(profile, index) in securityProfiles" :key="index">
             <td>{{ profile.name || '-' }}</td>
             <td>{{ profile['authentication-types'] || '-' }}</td>
-            <td>{{ profile['group-ciphers'] || '-' }}</td>
-            <td>{{ profile['management-protection'] || '-' }}</td>
-            <td>{{ profile['eap-methods'] || '-' }}</td>
             <td>{{ profile.mode || '-' }}</td>
-            <td>{{ profile['supplicant-identity'] || '-' }}</td>
             <td>{{ profile['wpa-pre-shared-key'] || '-' }}</td>
             <td>{{ profile['wpa2-pre-shared-key'] || '-' }}</td>
             <td>
               <!-- Add buttons for editing/deleting profiles -->
               <div style="display: flex; ">
-              <button @click="eliminarProfile(profile)"> Eliminar </button>
-            </div>
+                <button @click="eliminarProfile(profile)"> Eliminar </button>
+              </div>
             </td>
           </tr>
         </tbody>
@@ -44,7 +36,6 @@
       </div>
     </div>
 
-    <!-- Add profile modal -->
     <v-dialog v-model="addProfileModal" max-width="800px">
       <template v-slot:activator="{ on }"></template>
       <v-card>
@@ -52,15 +43,9 @@
         <v-card-text>
           <!-- Form for adding a new security profile -->
           <v-text-field v-model="newProfile.name" label="Name"></v-text-field>
-          <v-select
-            v-model="newProfile['mode']"
-            :items="modeOptions"
-            label="Mode"
-          ></v-select>
-          <v-text-field v-model="newProfile['authentication-types']" label="Authentication Types"></v-text-field>
-          <v-text-field v-model="newProfile['management-protection']" label="Management Protection"></v-text-field>
-          <v-text-field v-model="newProfile['eap-methods']" label="EAP Methods"></v-text-field>
-          <v-text-field v-model="newProfile['supplicant-identity']" label="Supplicant Identity"></v-text-field>
+          <v-select v-model="newProfile['mode']" :items="modeOptions" label="Mode"></v-select>
+          <v-select v-model="newProfile['authentication-types']" :items="authenticationtypesOptions"
+            label="Authentication Type"></v-select>
           <v-text-field v-model="newProfile['wpa-pre-shared-key']" label="WPA Pre-shared Key"></v-text-field>
           <v-text-field v-model="newProfile['wpa2-pre-shared-key']" label="WPA2 Pre-shared Key"></v-text-field>
         </v-card-text>
@@ -72,6 +57,8 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+
 
     <!-- Button to go back to Dashboard -->
     <div class="footer">
@@ -114,8 +101,11 @@ export default {
     const loading = ref(true);
     const addProfileModal = ref(false); // Control variable for showing/hiding add profile modal
     const newProfile = ref({}); // New profile object
-    const modeOptions = ref(['dynamic-keys', 'static-keys']);
-    const authenticationtypesOptions = ['eap', 'pre-shared-key', 'none'];
+    const modeOptions = ref(['dynamic-keys', 'none']);
+    const authenticationtypesOptions = ref(['wpa2-psk', 'wpa-psk']);
+
+
+
 
 
     onMounted(async () => {
@@ -145,9 +135,9 @@ export default {
       newProfile.value = {}; // Reset new profile object
     };
 
-    async function  eliminarProfile(profile){
+    async function eliminarProfile(profile) {
       try {
-        const response = await fetch('/rest/interface/wireless/security-profiles/'+profile[".id"], {
+        const response = await fetch('/rest/interface/wireless/security-profiles/' + profile[".id"], {
           method: "DELETE",
           headers: {
             'Content-type': 'application/json',
@@ -206,7 +196,7 @@ export default {
       }
     };
 
-    return { securityProfiles, loading, goToDashboard, addProfileModal, showAddProfileModal, cancelAddProfile, saveNewProfile, newProfile , eliminarProfile, modeOptions};
+    return { securityProfiles, loading, goToDashboard, addProfileModal, showAddProfileModal, cancelAddProfile, saveNewProfile, newProfile, eliminarProfile, modeOptions, authenticationtypesOptions };
   }
 };
 </script>
