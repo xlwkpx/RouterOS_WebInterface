@@ -52,11 +52,14 @@
         <v-card-text>
           <!-- Form for adding a new security profile -->
           <v-text-field v-model="newProfile.name" label="Name"></v-text-field>
+          <v-select
+            v-model="newProfile['mode']"
+            :items="modeOptions"
+            label="Mode"
+          ></v-select>
           <v-text-field v-model="newProfile['authentication-types']" label="Authentication Types"></v-text-field>
-          <v-text-field v-model="newProfile['group-ciphers']" label="Group Ciphers"></v-text-field>
           <v-text-field v-model="newProfile['management-protection']" label="Management Protection"></v-text-field>
           <v-text-field v-model="newProfile['eap-methods']" label="EAP Methods"></v-text-field>
-          <v-text-field v-model="newProfile.mode" label="Mode"></v-text-field>
           <v-text-field v-model="newProfile['supplicant-identity']" label="Supplicant Identity"></v-text-field>
           <v-text-field v-model="newProfile['wpa-pre-shared-key']" label="WPA Pre-shared Key"></v-text-field>
           <v-text-field v-model="newProfile['wpa2-pre-shared-key']" label="WPA2 Pre-shared Key"></v-text-field>
@@ -94,7 +97,9 @@ const getSecurityProfiles = async () => {
         'Authorization': `Basic ${basicAuth}`
       }
     });
+    console.log(response);
     return await response.json();
+
 
   } catch (error) {
     console.error('Error fetching security profiles:', error);
@@ -109,6 +114,8 @@ export default {
     const loading = ref(true);
     const addProfileModal = ref(false); // Control variable for showing/hiding add profile modal
     const newProfile = ref({}); // New profile object
+    const modeOptions = ref(['dynamic-keys', 'static-keys']);
+    const authenticationtypesOptions = ['eap', 'pre-shared-key', 'none'];
 
 
     onMounted(async () => {
@@ -199,7 +206,7 @@ export default {
       }
     };
 
-    return { securityProfiles, loading, goToDashboard, addProfileModal, showAddProfileModal, cancelAddProfile, saveNewProfile, newProfile , eliminarProfile};
+    return { securityProfiles, loading, goToDashboard, addProfileModal, showAddProfileModal, cancelAddProfile, saveNewProfile, newProfile , eliminarProfile, modeOptions};
   }
 };
 </script>
