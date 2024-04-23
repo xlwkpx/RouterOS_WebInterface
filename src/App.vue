@@ -2,7 +2,7 @@
   <v-app id="inspire">
     <v-app-bar>
       <v-app-bar-nav-icon @click="drawer = !drawer"></v-app-bar-nav-icon>
-      <v-app-bar-title>Application</v-app-bar-title>
+      <v-app-bar-title>SDN Controller</v-app-bar-title>
     </v-app-bar>
 
     <v-navigation-drawer v-model="drawer" temporary>
@@ -71,6 +71,14 @@
       <v-list-item-title>DNS Server</v-list-item-title>
     </v-list-item>
   </v-list>
+
+  <!-- VPN Page Link-->
+  <v-list-item to="/vpn" v-slot="{ navigate }" @click="navigate">
+    <v-list-item-icon>
+      <v-icon>mdi-vpn</v-icon>
+    </v-list-item-icon>
+    <v-list-item-title>VPN</v-list-item-title>
+  </v-list-item>
 </v-navigation-drawer>
 
 

@@ -2,7 +2,7 @@
   <v-main class="bg-grey-lighten-2">
     <v-container>
       <v-row>
-        <v-col cols="6" md="2" v-for="page in pages" :key="page.name">
+        <v-col cols="12" md="4" lg="3" v-for="page in pages" :key="page.name">
           <router-link :to="page.path" class="page-link">
             <v-icon class="page-icon">{{ page.icon }}</v-icon>
             <span class="page-name">{{ page.name }}</span>
@@ -23,10 +23,10 @@ const pages = ref([
   { name: 'Static Routes', path: '/static-routes', icon: 'mdi-road' },
   { name: 'IP Addresses', path: '/ip-addresses', icon: 'mdi-numeric' },
   { name: 'DHCP Servers', path: '/dhcp-servers', icon: 'mdi-server' },
-  { name: 'DNS Server', path: '/dns-server', icon: 'mdi-dns' }
+  { name: 'DNS Server', path: '/dns-server', icon: 'mdi-dns' },
+  { name: 'VPN', path: '/vpn', icon: 'mdi-vpn' }
 ]);
 </script>
-
 
 <style>
 .page-link {
@@ -42,7 +42,5 @@ const pages = ref([
 .page-icon {
   font-size: 64px !important;
 }
-
-
-
 </style>
+

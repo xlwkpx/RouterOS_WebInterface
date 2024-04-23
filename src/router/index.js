@@ -10,6 +10,7 @@ import StaticRoutesPage from '@/components/StaticRoutesPage.vue'
 import IpAddressesPage from '@/components/IpAddressesPage.vue'
 import DhcpServersPage from '@/components/DhcpServersPage.vue'
 import DnsServerPage from '@/components/DnsServerPage.vue'
+import VPN from '@/components/Vpn.vue'
 
 const routes = [
   {
@@ -51,6 +52,11 @@ const routes = [
     path: '/dns-server',
     component: DnsServerPage,
     name: 'DnsServer'
+  },
+  {
+    path: '/vpn',
+    component: VPN,
+    name: 'VPN'
   }
 ]
 

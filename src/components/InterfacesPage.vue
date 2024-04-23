@@ -2,8 +2,8 @@
   <div class="container">
     <h1>Network Interfaces</h1>
     <div class="filter">
-      <label for="interface-filter">Filter by type:</label>
-      <select id="interface-filter" v-model="selectedFilter" class="custom-dropdown">
+      <label for="interface-filter" style="color: black;">Filter by type:</label>
+      <select id="interface-filter" v-model="selectedFilter" class="custom-dropdown" style="color: black;">
         <option value="all">All Interfaces</option>
         <option value="wlan">Wireless</option>
         <option value="bridge">Bridge</option>
@@ -40,46 +40,45 @@
           </tr>
         </tbody>
       </table>
-      <div v-if="selectedFilter === 'bridge'"style="display: flex; margin-top: 7px;">
-      <v-btn @click="createBridgeInterface">Create Bridge Interface</v-btn>
-    </div>
+      <div v-if="selectedFilter === 'bridge'" style="display: flex; margin-top: 7px;">
+        <v-btn @click="createBridgeInterface">Create Bridge Interface</v-btn>
+      </div>
     </div>
 
-
+    <!-- Dialog for adding/editing bridge interface -->
     <v-dialog v-model="showDialogBridge" max-width="800px">
       <template v-slot:activator="{ on }"></template>
       <v-card>
         <v-card-title v-if="!editModal">Add Address</v-card-title>
         <v-card-title v-else>Edit Address</v-card-title>
-          <v-card-text>
-            <!-- Form for adding a new security profile -->
-            <v-text-field v-model="newBridgeInterface.name" label="Name"></v-text-field>
-            <v-select
-              v-model="newBridgeInterface.arp"
-              :items="bridgeArpOptions"
-              label="ARP"
-              outlined
-              dense
-            ></v-select>
-
-          </v-card-text>
+        <v-card-text>
+          <!-- Form for adding a new bridge interface -->
+          <v-text-field v-model="newBridgeInterface.name" label="Name"></v-text-field>
+          <v-select
+            v-model="newBridgeInterface.arp"
+            :items="bridgeArpOptions"
+            label="ARP"
+            outlined
+            dense
+          ></v-select>
+        </v-card-text>
         <v-card-actions>
-          <!-- Button to cancel adding profile -->
+          <!-- Button to cancel adding/editing bridge interface -->
           <v-btn @click="cancel">Cancel</v-btn>
-          <!-- Button to save the new profile -->
+          <!-- Button to save the new bridge interface -->
           <v-btn v-if="!editModal" color="primary" @click="saveNewBridge">Save</v-btn>
           <v-btn v-else color="primary" @click="saveEditBridge">Edit</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
 
-
     <!-- Button to go back to Dashboard -->
     <div class="footer">
-        <v-btn @click="goToDashboard">Back to Dashboard</v-btn>
+      <v-btn @click="goToDashboard">Back to Dashboard</v-btn>
     </div>
   </div>
 </template>
+
 
 <script>
 import { ref, onMounted, computed } from 'vue';
