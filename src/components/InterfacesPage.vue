@@ -19,6 +19,8 @@
             <th>MTU</th>
             <th>Running</th>
             <th>Mac Address</th>
+            <th>Ports</th>
+            <th></th>
             <th></th>
           </tr>
         </thead>
@@ -30,6 +32,9 @@
             <td>{{ networkInterface.running }}</td>
             <td>{{ networkInterface['mac-address'] }}</td>
             <div v-if="selectedFilter === 'bridge'">
+              <td>
+                {{ getInterfacePorts(networkInterface) }}
+              </td>
               <td>
                 <button @click="editBridgeInterface(networkInterface)">Edit</button>
               </td>
@@ -81,6 +86,7 @@
 
 
 <script>
+import { all } from 'axios';
 import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router'; // Import useRouter from vue-router
 
@@ -121,6 +127,7 @@ export default {
     const showDialogBridge = ref(false);
     const editModal = ref(false);
     const bridgeArpOptions = ref(["enabled", "disabled", "local-proxy-arp", "reply-only","proxy-arp"]);
+    const allPorts = ref([]);
     const selectedBridgeInterface = ref(null);
 
     const filteredInterfaces = computed(() => {
@@ -199,6 +206,23 @@ export default {
       }
     };
 
+    async function getAllPorts() {
+      const response = await fetch(`/rest/interface/bridge/port`, {
+        method: "GET",
+        headers: {
+          'Content-type': 'application/json',
+          'Authorization': `Basic ${basicAuth}`
+        }
+      });
+      const data = await response.json();
+      allPorts.value = data;
+    }
+
+     function getInterfacePorts(bridgeInterface) {
+      const ports = allPorts.value.filter(port => port['bridge'] === bridgeInterface['name']);
+      return ports != '' ? ports.map(port => port['interface']).join(', ') : '-';
+    }
+
 
     const saveEditBridge = async () => {
       try {
@@ -255,6 +279,7 @@ export default {
     onMounted(async () => {
       try {
         const data = await getInterfaces();
+        getAllPorts();
         networkInterfaces.value = data;
       } catch (error) {
         console.error('Error:', error);
@@ -269,7 +294,7 @@ export default {
     };
 
     return { networkInterfaces, loading, selectedFilter, filteredInterfaces, goToDashboard , createBridgeInterface, editBridgeInterface, deleteBridgeInterface, showDialogBridge, newBridgeInterface, saveNewBridge, editModal, bridgeArpOptions, cancel,
-    saveEditBridge, selectedBridgeInterface};
+    saveEditBridge, selectedBridgeInterface, getInterfacePorts, allPorts, getAllPorts};
   }
 };
 </script>

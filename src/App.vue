@@ -89,7 +89,12 @@
 </template>
 
 <script setup>
-  import { ref } from 'vue'
+  import { ref, onMounted } from 'vue'
 
   const drawer = ref(null)
+  const pageTitle = ref('SDN Controller')
+
+  onMounted(() => {
+    document.title = pageTitle.value
+  })
 </script>
