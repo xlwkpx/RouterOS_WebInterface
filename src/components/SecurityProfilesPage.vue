@@ -24,7 +24,9 @@
             <td>
               <!-- Add buttons for editing/deleting profiles -->
               <div style="display: flex; ">
-                <button @click="eliminarProfile(profile)"> Eliminar </button>
+                <button @click="eliminarProfile(profile)"> Delete </button>
+                &nbsp;
+                <button @click="toggleEditProfileModal(profile)"> Edit </button>
               </div>
             </td>
           </tr>
@@ -64,6 +66,24 @@
     <div class="footer">
       <v-btn @click="goToDashboard">Back to Dashboard</v-btn>
     </div>
+
+
+    <v-dialog v-model="showEditProfileModal" max-width="800px">
+      <template v-slot:activator="{ on }"></template>
+      <v-card>
+        <v-card-title>Edit Profile Modal</v-card-title>
+        <v-card-text>
+          <v-text-field v-model="selectedProfile.name" label="Name"></v-text-field>
+          <v-text-field v-model="selectedProfile['wpa-pre-shared-key']" label="WPA2 Pre-shared Key"></v-text-field>
+        </v-card-text>
+        <v-card-actions>
+          <!-- Button to cancel adding profile -->
+          <v-btn @click="showEditProfileModal = false">Cancel</v-btn>
+          <!-- Button to save the new profile -->
+          <v-btn color="primary" @click="updateProfile">Save</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
@@ -99,8 +119,10 @@ export default {
     const router = useRouter();
     const securityProfiles = ref([]);
     const loading = ref(true);
+    const showEditProfileModal = ref(false);
     const addProfileModal = ref(false); // Control variable for showing/hiding add profile modal
     const newProfile = ref({}); // New profile object
+    const selectedProfile = ref({}); // Selected profile object to edit
     const modeOptions = ref(['dynamic-keys', 'none']);
     const authenticationtypesOptions = ref(['wpa2-psk', 'wpa-psk']);
 
@@ -135,6 +157,7 @@ export default {
       newProfile.value = {}; // Reset new profile object
     };
 
+
     async function eliminarProfile(profile) {
       try {
         const response = await fetch('/rest/interface/wireless/security-profiles/' + profile[".id"], {
@@ -159,7 +182,43 @@ export default {
       } catch (error) {
         console.error('Error deleting profile:', error);
       }
-    };
+    }
+
+    const toggleEditProfileModal = (profile) => {
+      showEditProfileModal.value = true
+      selectedProfile.value = {
+        ".id": profile['.id'],
+        "name": profile.name,
+        "wpa-pre-shared-key": profile['wpa-pre-shared-key']
+      }
+    }
+
+    const updateProfile = async () => {
+      console.log('In profile ....')
+      console.log(selectedProfile.value)
+      try {
+        const response = await fetch('/rest/interface/wireless/security-profiles/' + selectedProfile.value[".id"], {
+          method: "PUT",
+          headers: {
+            'Content-type': 'application/json',
+            'Authorization': `Basic ${basicAuth}`
+          },
+          body: JSON.stringify(selectedProfile.value)
+        });
+
+
+        if (response.ok) {
+          console.log('Profile updated successfully!');
+          selectedProfile.value = {};
+          getSecurityProfiles();
+          showEditProfileModal.value = false;
+        } else {
+          console.error('Failed to update profile:', response.statusText);
+        }
+      } catch (error) {
+        console.error('Error updating profile:', error);
+      }
+    }
 
     // Method to save the new profile
     const saveNewProfile = async () => {
@@ -196,7 +255,7 @@ export default {
       }
     };
 
-    return { securityProfiles, loading, goToDashboard, addProfileModal, showAddProfileModal, cancelAddProfile, saveNewProfile, newProfile, eliminarProfile, modeOptions, authenticationtypesOptions };
+    return { securityProfiles, loading, goToDashboard, addProfileModal, showAddProfileModal, cancelAddProfile, saveNewProfile, newProfile, eliminarProfile, modeOptions, authenticationtypesOptions, toggleEditProfileModal, showEditProfileModal, selectedProfile, updateProfile };
   }
 };
 </script>

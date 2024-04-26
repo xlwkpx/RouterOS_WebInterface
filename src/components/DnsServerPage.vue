@@ -2,44 +2,44 @@
   <v-main class="bg-grey-lighten-2">
     <div class="container">
       <!-- Título "DNS Server" -->
-      <h1 >DNS Server</h1>
+      <h1>DNS Server</h1>
       <div v-if="loading" class="loading">Loading...</div>
       <!-- Tabela com os endereços IP -->
       <div>
-      <table v-if="!loading" class="interface-table">
-        <thead>
-          <tr>
-            <th>Address</th>
-            <th>Name</th>
-            <th></th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="dns in dnsServer" :key="dns.id">
-            <td>{{ dns.address }}</td>
-            <td>{{ dns.name }}</td>
-            <td>
-              <button @click="openEditDialog(dns)">Config</button>
-            </td>
-            <td>
-              <button v-if="dns.disabled='true'" @click="toggleStatus(dns)">Deactivate</button>
-              <button v-else @click="toggleStatus(dns)">Activate</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+        <table v-if="!loading" class="interface-table">
+          <thead>
+            <tr>
+              <th>Address</th>
+              <th>Name</th>
+              <th></th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="dns in dnsServer" :key="dns['.id']">
+              <td>{{ dns.address }}</td>
+              <td>{{ dns.name }}</td>
+              <td>
+                <button @click="openEditDialog(dns)">Config</button>
+              </td>
+              <td>
+                <button  v-if="dns.disabled == 'true'" @click="toggleStatus(dns)">Activate</button>
+                <button  v-else @click="toggleStatus(dns)">Deactivate</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
 
       <v-dialog v-model="showDialog" max-width="800px">
         <v-card>
-          <v-card-title >Config DNS Server</v-card-title>
-            <v-card-text>
-              <!-- Form for adding a new security profile -->
-              <v-text-field v-model="DnsServer.address" label="Address"></v-text-field>
-              <v-text-field v-model="DnsServer.name" label="Name"></v-text-field>
-            </v-card-text>
+          <v-card-title>Config DNS Server</v-card-title>
+          <v-card-text>
+            <!-- Form for adding a new security profile -->
+            <v-text-field v-model="DnsServer.address" label="Address"></v-text-field>
+            <v-text-field v-model="DnsServer.name" label="Name"></v-text-field>
+          </v-card-text>
           <v-card-actions>
             <!-- Button to cancel adding profile -->
             <v-btn @click="cancel">Cancel</v-btn>
@@ -93,7 +93,7 @@ export default {
     }
 
     async function toggleStatus(dns) {
-
+      console.log('hit.......')
       const response = await fetch(`/rest/ip/dns/static/${dns[".id"]}`, {
         method: "PUT",
         headers: {
@@ -101,7 +101,7 @@ export default {
           'Authorization': `Basic ${basicAuth}`
         },
         body: JSON.stringify({
-          "disabled": !dns.disabled,
+          "disabled": dns.disabled == 'true' ? "false" : "true",
         })
       });
 
@@ -122,7 +122,7 @@ export default {
         method: "PUT",
         headers: {
           'Content-type': 'application/json',
-          'Authorization': `Basic ${basicAuth}`
+          'Authorization': `Basic ${ basicAuth }`
         },
         body: JSON.stringify({
           "address": DnsServer.value.address,
@@ -208,5 +208,10 @@ h1 {
   left: 0;
   width: 100%;
   padding: 20px;
+}
+
+.toggle-button {
+  background: #F00;
+  padding: 5px .5em;
 }
 </style>

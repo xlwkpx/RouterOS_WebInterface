@@ -47,8 +47,14 @@
         <v-card-text>
           <!-- Form for adding a new security profile -->
           <v-text-field v-model="newDhcpServer.name" label="Name"></v-text-field>
-          <v-text-field v-model="newDhcpServer.interface" label="Interface"></v-text-field>
-          <v-text-field v-model="newDhcpServer['address-pool']" label="Address Pool"></v-text-field>
+          <v-select
+              v-model="newDhcpServer.interface"
+              :items="networkInterfaces"
+              label="Interface"
+              outlined
+              dense
+            ></v-select>
+            <v-text-field v-model="newDhcpServer['address-pool']" label="Address Pool"></v-text-field>
         </v-card-text>
       <v-card-actions>
         <!-- Button to cancel adding profile -->
@@ -97,6 +103,7 @@ export default {
     const showDialog = ref(false);
     const editModal = ref(false);
     const selectedDhcpServer = ref(null);
+    const networkInterfaces = ref([]);
     const newDhcpServer = ref({
       name: '',
       interface: '',
@@ -197,10 +204,30 @@ export default {
       }
 
     }
+    const getInterfaces = () => {
+      return fetch('/rest/interface', {
+        method: "GET",
+        headers: {
+          'Content-type': 'application/json',
+          'Authorization': `Basic ${basicAuth}`
+        }
+      })
+      .then(response => response.json())
+      .then(responseData => {
+        // Mapeie os dados para extrair apenas os nomes das interfaces de rede
+        const interfaceNames = responseData.map(data => data.name);
+        return interfaceNames;
+      })
+      .catch(error => {
+        console.error('Error fetching network interfaces:', error);
+        return [];
+      });
+    };
 
 
 
     onMounted(async () => {
+      networkInterfaces.value = await getInterfaces()
       try {
         const data = await getDHCPservers();
         dhcpServers.value = data;
@@ -215,7 +242,7 @@ export default {
     };
 
     return { dhcpServers, deleteDhcpServer,editDhcpServer, goToDashboard, createDhcpServer, showDialog, openDialog,
-      newDhcpServer, cancel, openEditDialog, editModal, selectedDhcpServer, };
+      newDhcpServer, cancel, openEditDialog, editModal, selectedDhcpServer, networkInterfaces};
 
   },
 
